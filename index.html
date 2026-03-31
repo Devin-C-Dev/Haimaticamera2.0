@@ -2112,10 +2112,9 @@
                 const isExternalUrl = photo.image.startsWith('http');
                 console.log('🌐 是否为外部URL:', isExternalUrl);
 
-                // 对于外部URL，设置crossOrigin以避免CORS问题
-                if (isExternalUrl) {
-                    img.crossOrigin = 'anonymous';
-                }
+                // 对外部URL使用代理，避免CORS问题
+                const imageUrl = isExternalUrl ? `/api/proxy-image?url=${encodeURIComponent(photo.image)}` : photo.image;
+                console.log('📷 最终加载的URL:', imageUrl.substring(0, 100));
 
                 img.onload = () => {
                     console.log('✅ 图片加载成功，开始绘制');
@@ -2165,13 +2164,9 @@
                         ctx.fillRect(imageLeft, imageTop, imageWidth, imageHeight);
                         ctx.globalCompositeOperation = 'source-over';
 
-                        // 7. 添加细腻的胶片颗粒噪点（仅对base64图片，避免CORS错误）
-                        if (!isExternalUrl) {
-                            console.log('✨ 添加胶片颗粒噪点...');
-                            this.addFineGrain(ctx, imageLeft, imageTop, imageWidth, imageHeight);
-                        } else {
-                            console.log('⚠️ 跳过噪点添加（外部URL图片）');
-                        }
+                        // 7. 添加细腻的胶片颗粒噪点
+                        console.log('✨ 添加胶片颗粒噪点...');
+                        this.addFineGrain(ctx, imageLeft, imageTop, imageWidth, imageHeight);
 
                         // 8. 下载图片
                         console.log('💾 开始下载...');
@@ -2201,7 +2196,7 @@
                 };
 
                 // 设置图片源，触发加载
-                img.src = photo.image;
+                img.src = imageUrl;
             },
 
             addPaperTexture(ctx, width, height) {

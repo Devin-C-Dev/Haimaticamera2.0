@@ -22,6 +22,50 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// 图片代理端点 - 解决 CORS 问题
+app.get('/api/proxy-image', async (req, res) => {
+  try {
+    const { url } = req.query;
+
+    if (!url) {
+      return res.status(400).json({
+        success: false,
+        error: '缺少图片 URL'
+      });
+    }
+
+    console.log('📷 代理获取图片:', url.substring(0, 100));
+
+    // 通过后端获取图片
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(`图片获取失败: ${response.status}`);
+    }
+
+    // 获取图片 buffer
+    const buffer = await response.arrayBuffer();
+
+    // 获取内容类型
+    const contentType = response.headers.get('content-type') || 'image/jpeg';
+
+    console.log('✅ 图片获取成功，大小:', buffer.byteLength, 'bytes');
+
+    // 设置响应头并返回图片
+    res.set('Content-Type', contentType);
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Cache-Control', 'public, max-age=3600');
+    res.send(Buffer.from(buffer));
+
+  } catch (error) {
+    console.error('❌ 图片代理错误:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || '图片获取失败'
+    });
+  }
+});
+
 // Coze API 代理路由
 app.post('/api/generate', async (req, res) => {
   try {
