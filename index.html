@@ -838,11 +838,11 @@
         <!-- 底部操作栏 -->
         <nav class="fixed bottom-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-xl h-24 flex items-center justify-between px-8 border-t border-[#ffffff]/5">
             <div class="flex items-center gap-8">
-                <button onclick="app.deleteCurrentPhoto()" class="flex flex-col items-center gap-1 group active:scale-90 duration-150 transition-all">
+                <button id="preview-delete-btn" onclick="app.deleteCurrentPhoto()" class="flex flex-col items-center gap-1 group active:scale-90 duration-150 transition-all">
                     <span class="material-symbols-outlined text-white text-2xl group-hover:text-[#f1cad5] transition-colors">delete</span>
                     <span class="font-space-grotesk text-[10px] text-white tracking-wider">删除</span>
                 </button>
-                <button onclick="app.downloadCurrentPhoto()" class="flex flex-col items-center gap-1 group active:scale-90 duration-150 transition-all">
+                <button id="preview-download-btn" onclick="app.downloadCurrentPhoto()" class="flex flex-col items-center gap-1 group active:scale-90 duration-150 transition-all">
                     <span class="material-symbols-outlined text-white text-2xl group-hover:text-[#f1cad5] transition-colors">download</span>
                     <span class="font-space-grotesk text-[10px] text-white tracking-wider">下载</span>
                 </button>
@@ -898,6 +898,7 @@
             cameraStream: null,
             currentFacingMode: 'user', // 当前摄像头模式：'user'（前置）或 'environment'（后置）
             currentFilter: 'polaroid-cyan', // 默认使用拍立得青色调滤镜
+            previewFromGallery: false, // 是否从相册进入预览
 
             // 首次访问提示
             firstVisitTipShown: false,
@@ -1476,8 +1477,8 @@
                         navigator.vibrate(50);
                     }
                 } else if (this.isDevelopingFinished) {
-                    // 显影完成后，显示预览
-                    this.showPreview(0);
+                    // 显影完成后，显示预览（从相机页面进入，不可下载）
+                    this.showPreview(0, false);
                 }
             },
 
@@ -1714,8 +1715,9 @@
                 console.log('finishDeveloping 完成');
             },
 
-            showPreview(index) {
+            showPreview(index, fromGallery = false) {
                 this.currentPhotoIndex = index;
+                this.previewFromGallery = fromGallery; // 记录是否来自相册
                 const photo = this.photos[index];
                 if (!photo) return;
 
@@ -1726,6 +1728,20 @@
                 previewImg.classList.remove('developing');
                 // 应用拍立得青色调滤镜
                 previewImg.style.filter = 'brightness(1.08) contrast(1.02) saturate(0.95) sepia(0.05) hue-rotate(-5deg)';
+
+                // 控制下载和删除按钮的显示
+                const downloadBtn = document.getElementById('preview-download-btn');
+                const deleteBtn = document.getElementById('preview-delete-btn');
+
+                if (fromGallery) {
+                    // 从相册进入：显示下载和删除按钮
+                    downloadBtn.style.display = 'flex';
+                    deleteBtn.style.display = 'flex';
+                } else {
+                    // 从相机页面进入：隐藏下载和删除按钮
+                    downloadBtn.style.display = 'none';
+                    deleteBtn.style.display = 'none';
+                }
 
                 this.showPage('preview');
             },
@@ -2273,7 +2289,8 @@
             },
 
             showPreviewFromGallery(index) {
-                this.showPreview(index);
+                // 从相册进入预览，可以下载和删除
+                this.showPreview(index, true);
             },
 
             showPage(pageName) {
