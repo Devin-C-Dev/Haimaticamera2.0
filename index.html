@@ -1729,19 +1729,12 @@
                 // 应用拍立得青色调滤镜
                 previewImg.style.filter = 'brightness(1.08) contrast(1.02) saturate(0.95) sepia(0.05) hue-rotate(-5deg)';
 
-                // 控制下载和删除按钮的显示
+                // 所有预览页面都显示下载和删除按钮
                 const downloadBtn = document.getElementById('preview-download-btn');
                 const deleteBtn = document.getElementById('preview-delete-btn');
 
-                if (fromGallery) {
-                    // 从相册进入：显示下载和删除按钮
-                    downloadBtn.style.display = 'flex';
-                    deleteBtn.style.display = 'flex';
-                } else {
-                    // 从相机页面进入：隐藏下载和删除按钮
-                    downloadBtn.style.display = 'none';
-                    deleteBtn.style.display = 'none';
-                }
+                downloadBtn.style.display = 'flex';
+                deleteBtn.style.display = 'flex';
 
                 this.showPage('preview');
             },
@@ -2115,7 +2108,14 @@
                 console.log('🖼️ 开始加载图片...');
                 console.log('🔗 图片 URL 前100字符:', photo.image.substring(0, 100));
 
-                // 移除 crossOrigin 避免 CORS 问题
+                // 检测是否为外部URL图片
+                const isExternalUrl = photo.image.startsWith('http');
+                console.log('🌐 是否为外部URL:', isExternalUrl);
+
+                // 对于外部URL，设置crossOrigin以避免CORS问题
+                if (isExternalUrl) {
+                    img.crossOrigin = 'anonymous';
+                }
 
                 img.onload = () => {
                     console.log('✅ 图片加载成功，开始绘制');
@@ -2165,8 +2165,13 @@
                         ctx.fillRect(imageLeft, imageTop, imageWidth, imageHeight);
                         ctx.globalCompositeOperation = 'source-over';
 
-                        // 7. 添加细腻的胶片颗粒噪点
-                        this.addFineGrain(ctx, imageLeft, imageTop, imageWidth, imageHeight);
+                        // 7. 添加细腻的胶片颗粒噪点（仅对base64图片，避免CORS错误）
+                        if (!isExternalUrl) {
+                            console.log('✨ 添加胶片颗粒噪点...');
+                            this.addFineGrain(ctx, imageLeft, imageTop, imageWidth, imageHeight);
+                        } else {
+                            console.log('⚠️ 跳过噪点添加（外部URL图片）');
+                        }
 
                         // 8. 下载图片
                         console.log('💾 开始下载...');
