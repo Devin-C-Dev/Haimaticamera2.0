@@ -709,8 +709,8 @@
                         <div class="relative w-full h-full rounded-full bg-[#050505] overflow-hidden flex items-center justify-center shadow-[inset_0_0_40px_rgba(0,0,0,1)]">
                             <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent"></div>
 
-                            <!-- 摄像头画面 -->
-                            <video id="camera-stream" class="absolute inset-0 w-full h-full object-cover" autoplay playsinline muted></video>
+                            <!-- 摄像头画面（镜像显示，但拍照时不镜像） -->
+                            <video id="camera-stream" class="absolute inset-0 w-full h-full object-cover" style="transform: scaleX(-1);" autoplay playsinline muted></video>
 
                             <!-- 未开启摄像头时的提示 -->
                             <div id="camera-placeholder" class="w-32 h-32 rounded-full border-2 border-white/5 flex items-center justify-center">
