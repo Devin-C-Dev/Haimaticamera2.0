@@ -795,6 +795,53 @@
                 </div>
             </div>
 
+            <!-- 首次使用引导页 -->
+            <div id="first-visit-guide" class="fixed inset-0 z-[70] bg-black/70 flex items-center justify-center p-4 hidden">
+                <div class="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl max-h-[90vh] overflow-y-auto">
+                    <span class="material-symbols-outlined text-7xl text-[#be004c] mb-4">photo_camera</span>
+                    <h2 class="text-3xl font-bold text-[#2d3432] mb-2 font-space-grotesk">欢迎使用 Haimaticamera</h2>
+                    <p class="text-lg text-[#be004c] font-semibold mb-6 font-space-grotesk">AI 智能证件照生成</p>
+
+                    <div class="text-left bg-gray-50 rounded-2xl p-6 mb-6">
+                        <h3 class="font-bold text-[#2d3432] mb-4 text-center font-space-grotesk">使用指南</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-start gap-3">
+                                <span class="material-symbols-outlined text-[#be004c] text-2xl mt-0.5">face</span>
+                                <div>
+                                    <p class="font-semibold text-[#2d3432]">正对镜头自拍</p>
+                                    <p class="text-sm text-gray-600">请将手机前置摄像头对准自己的脸部</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <span class="material-symbols-outlined text-[#be004c] text-2xl mt-0.5">crop_free</span>
+                                <div>
+                                    <p class="font-semibold text-[#2d3432]">保持头部完整</p>
+                                    <p class="text-sm text-gray-600">确保头部完整显示在画面中，不要被裁切</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <span class="material-symbols-outlined text-[#be004c] text-2xl mt-0.5">light_mode</span>
+                                <div>
+                                    <p class="font-semibold text-[#2d3432]">确保光线充足</p>
+                                    <p class="text-sm text-gray-600">在光线明亮的环境下拍摄效果更佳</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <span class="material-symbols-outlined text-[#be004c] text-2xl mt-0.5">auto_awesome</span>
+                                <div>
+                                    <p class="font-semibold text-[#2d3432]">AI 自动生成</p>
+                                    <p class="text-sm text-gray-600">AI 将自动生成专业证件照效果</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button id="guide-got-it-btn" class="w-full bg-[#be004c] text-white py-4 rounded-full font-bold font-space-grotesk hover:bg-[#a00040] transition-colors active:scale-[0.98] text-lg">
+                        我知道了
+                    </button>
+                </div>
+            </div>
+
             <!-- 摄像头权限提示弹窗 -->
             <div id="camera-permission-modal" class="fixed inset-0 z-[60] bg-black/70 flex items-center justify-center p-4">
                 <div class="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl">
@@ -926,18 +973,62 @@
                         flipBtn.disabled = true;
                     }
 
-                    // 显示摄像头权限提示
+                    // 检查是否首次访问，显示引导页
+                    setTimeout(() => {
+                        this.checkFirstVisit();
+                    }, 300);
+                } catch (error) {
+                    console.error('初始化错误:', error);
+                }
+            },
+
+            checkFirstVisit() {
+                // 检查 localStorage 中是否已显示过引导页
+                const hasSeenGuide = localStorage.getItem('firstVisitGuideShown');
+
+                if (!hasSeenGuide) {
+                    // 首次访问，显示引导页
+                    this.showFirstVisitGuide();
+                } else {
+                    // 已访问过，直接显示摄像头权限提示
                     setTimeout(() => {
                         this.showCameraPermissionModal();
-                    }, 500);
+                    }, 200);
 
                     // 显示首次访问提示框（延迟显示，避免与权限提示冲突）
                     setTimeout(() => {
                         this.showFirstVisitTip();
                     }, 1500);
-                } catch (error) {
-                    console.error('初始化错误:', error);
                 }
+            },
+
+            showFirstVisitGuide() {
+                const guide = document.getElementById('first-visit-guide');
+                if (guide) {
+                    guide.classList.remove('hidden');
+                    guide.classList.add('flex');
+                }
+            },
+
+            hideFirstVisitGuide() {
+                const guide = document.getElementById('first-visit-guide');
+                if (guide) {
+                    guide.classList.add('hidden');
+                    guide.classList.remove('flex');
+                }
+
+                // 保存到 localStorage，下次不再显示
+                localStorage.setItem('firstVisitGuideShown', 'true');
+
+                // 显示摄像头权限提示
+                setTimeout(() => {
+                    this.showCameraPermissionModal();
+                }, 300);
+
+                // 显示首次访问提示框（延迟显示，避免与权限提示冲突）
+                setTimeout(() => {
+                    this.showFirstVisitTip();
+                }, 1500);
             },
 
             showCameraPermissionModal() {
@@ -1064,6 +1155,9 @@
             },
 
             bindEvents() {
+                // 首次访问引导页按钮
+                document.getElementById('guide-got-it-btn').addEventListener('click', () => this.hideFirstVisitGuide());
+
                 // 开启摄像头按钮
                 document.getElementById('start-camera-btn').addEventListener('click', () => this.startCamera());
 
