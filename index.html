@@ -2053,8 +2053,17 @@
             },
 
             downloadCurrentPhoto() {
+                console.log('📥 开始下载照片');
                 const photo = this.photos[this.currentPhotoIndex];
-                if (!photo) return;
+                if (!photo) {
+                    console.error('❌ 没有找到照片数据');
+                    alert('无法下载：照片数据不存在');
+                    return;
+                }
+
+                console.log('✅ 找到照片，ID:', photo.id);
+                console.log('🖼️ 图片数据类型:', typeof photo.image);
+                console.log('🖼️ 图片数据长度:', photo.image ? photo.image.length : 0);
 
                 // 使用 html2canvas 来截取整个拍立得相框
                 // 如果没有引入 html2canvas，则手动绘制
@@ -2062,6 +2071,7 @@
             },
 
             downloadPolaroidFrame(photo) {
+                console.log('🎨 开始绘制拍立得相框');
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
 
@@ -2083,6 +2093,8 @@
                 canvas.width = frameWidth;
                 canvas.height = frameHeight;
 
+                console.log('📐 Canvas 尺寸:', frameWidth, 'x', frameHeight);
+
                 // 1. 绘制白色背景（渐变效果）- 添加圆角
                 const bgGradient = ctx.createLinearGradient(0, 0, frameWidth, frameHeight);
                 bgGradient.addColorStop(0, '#ffffff');
@@ -2099,66 +2111,91 @@
 
                 // 3. 加载并绘制图片
                 const img = new Image();
+
+                console.log('🖼️ 开始加载图片...');
+                console.log('🔗 图片 URL 前100字符:', photo.image.substring(0, 100));
+
                 // 移除 crossOrigin 避免 CORS 问题
 
                 img.onload = () => {
-                    // 应用拍立得青色调滤镜
-                    ctx.filter = 'brightness(1.08) contrast(1.02) saturate(0.95) sepia(0.05) hue-rotate(-5deg)';
+                    console.log('✅ 图片加载成功，开始绘制');
+                    console.log('📏 图片实际尺寸:', img.width, 'x', img.height);
 
-                    // 绘制图片 - 无圆角裁剪
-                    ctx.save();
-                    ctx.beginPath();
-                    ctx.rect(imageLeft, imageTop, imageWidth, imageHeight);
-                    ctx.clip();
-                    ctx.drawImage(img, imageLeft, imageTop, imageWidth, imageHeight);
-                    ctx.restore();
+                    try {
+                        // 应用拍立得青色调滤镜
+                        ctx.filter = 'brightness(1.08) contrast(1.02) saturate(0.95) sepia(0.05) hue-rotate(-5deg)';
 
-                    // 4. 添加图片上的渐变叠加
-                    ctx.filter = 'none';
-                    const imgGradient = ctx.createLinearGradient(imageLeft, imageTop, imageLeft + imageWidth, imageTop + imageHeight);
-                    imgGradient.addColorStop(0, 'rgba(255,255,255,0)');
-                    imgGradient.addColorStop(0.5, 'rgba(255,255,255,0.05)');
-                    imgGradient.addColorStop(1, 'rgba(255,255,255,0)');
-                    ctx.fillStyle = imgGradient;
-                    ctx.fillRect(imageLeft, imageTop, imageWidth, imageHeight);
+                        // 绘制图片 - 无圆角裁剪
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.rect(imageLeft, imageTop, imageWidth, imageHeight);
+                        ctx.clip();
+                        ctx.drawImage(img, imageLeft, imageTop, imageWidth, imageHeight);
+                        ctx.restore();
 
-                    // 5. 添加暗角效果 - 细腻层次感
-                    const vignetteGradient = ctx.createRadialGradient(
-                        imageLeft + imageWidth / 2, imageTop + imageHeight / 2, Math.min(imageWidth, imageHeight) * 0.5,
-                        imageLeft + imageWidth / 2, imageTop + imageHeight / 2, Math.max(imageWidth, imageHeight) / 2
-                    );
-                    vignetteGradient.addColorStop(0, 'rgba(0,0,0,0)');
-                    vignetteGradient.addColorStop(1, 'rgba(0,0,0,0.25)');
-                    ctx.fillStyle = vignetteGradient;
-                    ctx.fillRect(imageLeft, imageTop, imageWidth, imageHeight);
+                        // 4. 添加图片上的渐变叠加
+                        ctx.filter = 'none';
+                        const imgGradient = ctx.createLinearGradient(imageLeft, imageTop, imageLeft + imageWidth, imageTop + imageHeight);
+                        imgGradient.addColorStop(0, 'rgba(255,255,255,0)');
+                        imgGradient.addColorStop(0.5, 'rgba(255,255,255,0.05)');
+                        imgGradient.addColorStop(1, 'rgba(255,255,255,0)');
+                        ctx.fillStyle = imgGradient;
+                        ctx.fillRect(imageLeft, imageTop, imageWidth, imageHeight);
 
-                    // 6. FRGMT BW: 添加细腻的暗部层次
-                    ctx.globalCompositeOperation = 'multiply';
-                    const deepShadowGradient = ctx.createRadialGradient(
-                        imageLeft + imageWidth / 2, imageTop + imageHeight / 2, Math.min(imageWidth, imageHeight) * 0.5,
-                        imageLeft + imageWidth / 2, imageTop + imageHeight / 2, Math.max(imageWidth, imageHeight) / 2
-                    );
-                    deepShadowGradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
-                    deepShadowGradient.addColorStop(0.8, 'rgba(0, 0, 0, 0.08)');
-                    deepShadowGradient.addColorStop(1, 'rgba(0, 0, 0, 0.15)');
-                    ctx.fillStyle = deepShadowGradient;
-                    ctx.fillRect(imageLeft, imageTop, imageWidth, imageHeight);
-                    ctx.globalCompositeOperation = 'source-over';
+                        // 5. 添加暗角效果 - 细腻层次感
+                        const vignetteGradient = ctx.createRadialGradient(
+                            imageLeft + imageWidth / 2, imageTop + imageHeight / 2, Math.min(imageWidth, imageHeight) * 0.5,
+                            imageLeft + imageWidth / 2, imageTop + imageHeight / 2, Math.max(imageWidth, imageHeight) / 2
+                        );
+                        vignetteGradient.addColorStop(0, 'rgba(0,0,0,0)');
+                        vignetteGradient.addColorStop(1, 'rgba(0,0,0,0.25)');
+                        ctx.fillStyle = vignetteGradient;
+                        ctx.fillRect(imageLeft, imageTop, imageWidth, imageHeight);
 
-                    // 7. 添加细腻的胶片颗粒噪点
-                    this.addFineGrain(ctx, imageLeft, imageTop, imageWidth, imageHeight);
+                        // 6. FRGMT BW: 添加细腻的暗部层次
+                        ctx.globalCompositeOperation = 'multiply';
+                        const deepShadowGradient = ctx.createRadialGradient(
+                            imageLeft + imageWidth / 2, imageTop + imageHeight / 2, Math.min(imageWidth, imageHeight) * 0.5,
+                            imageLeft + imageWidth / 2, imageTop + imageHeight / 2, Math.max(imageWidth, imageHeight) / 2
+                        );
+                        deepShadowGradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
+                        deepShadowGradient.addColorStop(0.8, 'rgba(0, 0, 0, 0.08)');
+                        deepShadowGradient.addColorStop(1, 'rgba(0, 0, 0, 0.15)');
+                        ctx.fillStyle = deepShadowGradient;
+                        ctx.fillRect(imageLeft, imageTop, imageWidth, imageHeight);
+                        ctx.globalCompositeOperation = 'source-over';
 
-                    // 8. 下载图片
-                    const link = document.createElement('a');
-                    link.download = `fragmt_bw_${photo.id}.png`;
-                    link.href = canvas.toDataURL('image/png', 1.0);
-                    link.click();
+                        // 7. 添加细腻的胶片颗粒噪点
+                        this.addFineGrain(ctx, imageLeft, imageTop, imageWidth, imageHeight);
+
+                        // 8. 下载图片
+                        console.log('💾 开始下载...');
+                        const dataURL = canvas.toDataURL('image/png', 1.0);
+                        console.log('✅ Canvas 转换完成，数据长度:', dataURL.length);
+
+                        const link = document.createElement('a');
+                        link.download = `polaroid_${photo.id}.png`;
+                        link.href = dataURL;
+
+                        // 添加到 DOM 并点击
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+
+                        console.log('✅ 下载完成！');
+                    } catch (error) {
+                        console.error('❌ 绘制或下载过程中出错:', error);
+                        alert('下载失败：' + error.message);
+                    }
                 };
 
-                img.onerror = () => {
-                    alert('图片加载失败，无法下载');
+                img.onerror = (error) => {
+                    console.error('❌ 图片加载失败:', error);
+                    console.error('🔗 图片 URL:', photo.image);
+                    alert('图片加载失败，无法下载。\n\n可能是网络问题或图片格式不支持。');
                 };
 
+                // 设置图片源，触发加载
                 img.src = photo.image;
             },
 
