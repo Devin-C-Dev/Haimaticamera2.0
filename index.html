@@ -2063,7 +2063,7 @@
                 this.downloadPolaroidFrame(photo);
             },
 
-            downloadPolaroidFrame(photo) {
+            async downloadPolaroidFrame(photo) {
                 console.log('🎨 开始绘制拍立得相框');
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
@@ -2103,8 +2103,6 @@
                 ctx.fillRect(imageLeft, imageTop, imageWidth, imageHeight);
 
                 // 3. 加载并绘制图片
-                const img = new Image();
-
                 console.log('🖼️ 开始加载图片...');
                 console.log('🔗 图片 URL 前100字符:', photo.image.substring(0, 100));
 
@@ -2112,9 +2110,36 @@
                 const isExternalUrl = photo.image.startsWith('http');
                 console.log('🌐 是否为外部URL:', isExternalUrl);
 
-                // 对外部URL使用代理，避免CORS问题
-                const imageUrl = isExternalUrl ? `/api/proxy-image?url=${encodeURIComponent(photo.image)}` : photo.image;
-                console.log('📷 最终加载的URL:', imageUrl.substring(0, 100));
+                let imageUrl = photo.image;
+
+                // 如果是外部URL，尝试通过后端代理
+                if (isExternalUrl) {
+                    console.log('📷 使用后端代理获取图片...');
+                    try {
+                        const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(photo.image)}`;
+                        console.log('🔗 代理URL:', proxyUrl.substring(0, 100));
+
+                        // 通过 fetch 获取图片
+                        const response = await fetch(proxyUrl);
+
+                        if (!response.ok) {
+                            throw new Error(`代理请求失败: ${response.status}`);
+                        }
+
+                        const blob = await response.blob();
+                        imageUrl = URL.createObjectURL(blob);
+                        console.log('✅ 通过代理获取图片成功');
+
+                        // 使用完后释放 URL
+                        setTimeout(() => URL.revokeObjectURL(imageUrl), 60000);
+                    } catch (error) {
+                        console.error('❌ 代理获取失败，尝试直接加载:', error);
+                        // 代理失败，尝试直接加载
+                        imageUrl = photo.image;
+                    }
+                }
+
+                const img = new Image();
 
                 img.onload = () => {
                     console.log('✅ 图片加载成功，开始绘制');
